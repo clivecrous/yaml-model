@@ -7,17 +7,17 @@ class YAML::Model
 
   attr_reader :id
 
-  @@next_oid = 1
-  @@filename = nil
-  @@data = Hash.new{|h,k|h[k]=[]}
+  @@database_filename = nil
+
+  @@database = {
+    :next_oid => 1,
+    :data => {}
+  }
+
   @@volatile = [ :@volatile ]
 
-  def self.next_oid
-    @@next_oid += 1
-  end
-
   def self.all
-    @@data[ self ]
+    @@database[ :data ][ self.name ] ||= []
   end
 
   def assert( assertion, info )
@@ -52,41 +52,19 @@ class YAML::Model
     all.select{|n|n.id==id}.first
   end
 
-  def self.load( filename )
-    @@data[ File.expand_path( filename ) ] = YAML.load( File.read( filename ) ) if File.exists?( filename )
-  end
-
   def self.load!
-    self.load( @@filename )
+    @@database = YAML.load( File.read( @@database_filename ) ) if File.exists?( @@database_filename )
   end
 
   def self.filename=( filename )
-    @@filename = filename
+    @@database_filename = filename
     self.load!
   end
 
-  def self.filename
-    @@filename
-  end
-
-  def filename
-    @@filename
-  end
-
   def self.save!
-    next_oid = YAML::Model.next_oid
-    data_by_filename = Hash.new{|h,k|h[k]=[]}
-    @@data.to_a.map do |klass,instances|
-      instances.map do |instance|
-        data_by_filename[ instance.filename ] << instance
-      end
-    end.uniq
-    p '-'*80
-    p @@data,data_by_filename
-    p '-'*80
-    data_by_filename.keys.each do |filename|
-      File.open( filename, 'w' ) do |file|
-        file.write( { :next_oid => next_oid, :data => data_by_filename[ filename ] }.to_yaml )
+    if @@database_filename
+      File.open( @@database_filename, 'w' ) do |file|
+        file.write( @@database.to_yaml )
       end
     end
   end
@@ -118,16 +96,17 @@ class YAML::Model
   def self.create( *args )
     this = self.new( *args )
     this.instance_eval do
-      @id = YAML::Model.next_oid
+      @id = @@database[ :next_oid ]
       @id.freeze
     end
-    @@data[ this.class ] ||= []
-    @@data[ this.class ] << this
+    @@database[ :next_oid ] += 1
+    @@database[ :data ][ this.class.name ] ||= []
+    @@database[ :data ][ this.class.name ] << this
     this
   end
 
   def delete
-    @@data[ self.class ].delete( self )
+    @@database[ :data ][ self.class.name ].delete( self )
   end
 
   def <=>( other )
