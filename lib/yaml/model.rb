@@ -53,7 +53,7 @@ class YAML::Model
   end
 
   def self.load!
-    @@database = YAML.load( File.read( @@database_filename ) ) if File.exists?( @@database_filename )
+    @@database = YAML.load( File.read( @@database_filename.to_s ) ) if File.exists?( @@database_filename.to_s )
   end
 
   def self.filename=( filename )
