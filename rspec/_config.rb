@@ -1,1 +1,1 @@
-require 'lib/yaml/model.rb'
+require 'lib/yaml/model'

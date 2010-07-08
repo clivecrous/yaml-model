@@ -1,5 +1,9 @@
 describe YAML::Model, "::init" do
 
+  before( :each ) do
+    YAML::Model.reset!
+  end
+
   it "runs the block it's given" do
     $ran_it = false
     class Test < YAML::Model

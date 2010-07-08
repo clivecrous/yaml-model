@@ -65,10 +65,14 @@ class YAML::Model
     self.load!
   end
 
+  def self.to_yaml
+    @@database.to_yaml
+  end
+
   def self.save!
     if @@database_filename
       File.open( @@database_filename, 'w' ) do |file|
-        file.write( @@database.to_yaml )
+        file.write( self.to_yaml )
       end
     end
   end
@@ -117,13 +121,45 @@ class YAML::Model
     self.id <=> other.id
   end
 
-  def self.has( attribute_name, klass )
-    define_method attribute_name do
-      klass.select do |this|
-        this.instance_variables.inject( false ) do |result,variable|
-          result ||= this.instance_eval(variable).class == self.class && this.instance_eval(variable).id == self.id
+  def self.has( that_attribute_plural, that_class, many_to_many = false )
+    if many_to_many
+      this_class = self
+      this_class_name, that_class_name = [this_class,that_class].map{|n|n.name.split(':')[-1]}
+      this_attribute_singular = this_class_name.downcase.to_sym
+      that_attribute_singular = that_class_name.downcase.to_sym
+      via_class_name = [ this_class_name, that_class_name ].sort.map{|n|n.capitalize}.join('')
+      via_class = eval( "#{via_class_name}||=Class.new(YAML::Model)" )
+      via_attribute_plural = ( via_class_name.downcase + "s" ).to_sym
+
+      if via_class.instance_variables.empty?
+        via_class.type this_attribute_singular, this_class
+        via_class.type that_attribute_singular, that_class
+      end
+
+      this_class.has via_attribute_plural, via_class
+
+      define_method that_attribute_plural do
+        send( via_attribute_plural ).map do |via_instance|
+          via_instance.send( that_attribute_singular )
         end
       end
+
+      define_method "add_#{that_attribute_singular}".to_sym do |that_instance|
+        via_instance = via_class.create
+        via_instance.send( "#{this_attribute_singular}=".to_sym, self )
+        via_instance.send( "#{that_attribute_singular}=".to_sym, that_instance )
+      end
+
+    else
+
+      define_method that_attribute_plural do
+        that_class.select do |that_instance|
+          that_instance.instance_variables.inject( false ) do |result,variable|
+            result ||= that_instance.instance_eval(variable).class == self.class && that_instance.instance_eval(variable).id == self.id
+          end
+        end
+      end
+
     end
   end
 
