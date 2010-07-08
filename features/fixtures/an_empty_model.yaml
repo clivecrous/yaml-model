@@ -1,6 +1,0 @@
---- 
-:next_oid: 2
-:data: 
-  AnEmptyModel: 
-  - !ruby/object:AnEmptyModel 
-    id: 1
