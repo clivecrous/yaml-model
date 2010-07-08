@@ -5,14 +5,18 @@ class YAML::Model
   class Error < Exception
   end
 
+  def self.reset!
+    @@database_filename = nil
+
+    @@database = {
+      :next_oid => 1,
+      :data => {}
+    }
+  end
+
+  reset!
+
   attr_reader :id
-
-  @@database_filename = nil
-
-  @@database = {
-    :next_oid => 1,
-    :data => {}
-  }
 
   @@volatile = [ :@volatile ]
 
@@ -43,8 +47,8 @@ class YAML::Model
     define_method :initialize do |*args|
       attributes.each do |attribute|
         self.send( "#{attribute}=".to_sym, args.shift )
-        self.instance_eval( &block ) if block_given?
       end
+      self.instance_eval( &block ) if block_given?
     end
   end
 
