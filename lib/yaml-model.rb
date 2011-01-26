@@ -160,7 +160,7 @@ class YAML_Model
       define_method that_attribute_plural do
         that_class.select do |that_instance|
           that_instance.instance_variables.inject( false ) do |result,variable|
-            result ||= that_instance.instance_eval(variable).class == self.class && that_instance.instance_eval(variable).id == self.id
+            result ||= that_instance.instance_eval(variable.to_s).class == self.class && that_instance.instance_eval(variable.to_s).id == self.id
           end
         end
       end
