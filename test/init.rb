@@ -8,6 +8,7 @@ describe YAML_Model, "::init" do
 
   it "runs the block it's given" do
     $ran_it = false
+    Test = Class.new( YAML_Model )
     class Test < YAML_Model
       init do
         $ran_it = true
@@ -19,6 +20,7 @@ describe YAML_Model, "::init" do
   end
 
   it "can set instance varibles inside blocks it's given" do
+    Test = Class.new( YAML_Model )
     class Test < YAML_Model
       type :name, String
       init :name do
