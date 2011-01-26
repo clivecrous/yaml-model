@@ -1,9 +1,9 @@
-require 'rake'
-require 'spec/rake/spectask'
-
-desc "Run all unit tests"
-Spec::Rake::SpecTask.new( 'test' ) do |t|
-  t.spec_files = ['rspec/_config.rb'] + FileList['rspec/**/*.rb']
-end
+require 'bundler'
+Bundler::GemHelper.install_tasks
 
 task :default => :test
+
+desc "unit tests"
+task :test do
+  exec 'bundle exec rspec test/*.rb'
+end

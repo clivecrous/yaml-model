@@ -1,6 +1,7 @@
 require 'yaml'
+require 'yaml-model/version'
 
-class YAML::Model
+class YAML_Model
 
   class Error < Exception
   end
@@ -117,9 +118,13 @@ class YAML::Model
     @@database[ :data ][ self.class.name ].delete( self )
   end
 
-  def <=>( other )
-    self.id <=> other.id
+  def self.sort_by( *attributes )
+    define_method '<=>'.to_sym do |other|
+      attributes.map{|a|self.send(a)} <=> attributes.map{|a|other.send(a)}
+    end
   end
+
+  sort_by :id
 
   def self.has( that_attribute_plural, that_class, many_to_many = false )
     if many_to_many
@@ -128,7 +133,7 @@ class YAML::Model
       this_attribute_singular = this_class_name.downcase.to_sym
       that_attribute_singular = that_class_name.downcase.to_sym
       via_class_name = [ this_class_name, that_class_name ].sort.map{|n|n.capitalize}.join('')
-      via_class = eval( "#{via_class_name}||=Class.new(YAML::Model)" )
+      via_class = eval( "#{via_class_name}||=Class.new(YAML_Model)" )
       via_attribute_plural = ( via_class_name.downcase + "s" ).to_sym
 
       if via_class.instance_variables.empty?

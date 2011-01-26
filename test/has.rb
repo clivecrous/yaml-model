@@ -1,23 +1,25 @@
-describe YAML::Model, "::has" do
+require 'yaml-model'
+
+describe YAML_Model, "::has" do
 
   before( :each ) do
-    YAML::Model.reset!
+    YAML_Model.reset!
   end
 
   it "creates a method of the correct attribute name" do
-    class User < YAML::Model
-      has :posts, Class.new( YAML::Model )
+    class User < YAML_Model
+      has :posts, Class.new( YAML_Model )
     end
     User.instance_methods.index( :posts ).should_not == nil
   end
 
   it "correctly references items that belong to it" do
-    User = Class.new( YAML::Model )
-    class Post < YAML::Model
+    User = Class.new( YAML_Model )
+    class Post < YAML_Model
       type :user, User
       init :user
     end
-    class User < YAML::Model
+    class User < YAML_Model
       has :posts, Post
     end
 
@@ -34,9 +36,9 @@ describe YAML::Model, "::has" do
   end
 
   it "adds an add_ method when the relationship is many_to_many" do
-    class Tag < YAML::Model
+    class Tag < YAML_Model
     end
-    class Post < YAML::Model
+    class Post < YAML_Model
       has :tags, Tag, :many_to_many
     end
     Post.instance_methods.index( :add_tag ).should_not == nil
@@ -44,9 +46,9 @@ describe YAML::Model, "::has" do
   end
 
   it "handles many to many relationships seamlessly" do
-    class Tag < YAML::Model
+    class Tag < YAML_Model
     end
-    class Post < YAML::Model
+    class Post < YAML_Model
     end
     Post.has :tags, Tag, :many_to_many
     Tag.has :posts, Post, :many_to_many
