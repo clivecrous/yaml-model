@@ -33,21 +33,34 @@ class YAML_Model
     assert( [types].flatten.inject(false){|result,type|result||=(type===variable)}, "Invalid type: `#{variable.class.name}`" )
   end
 
-  def self.type attribute, types, &block
-    define_method attribute do
-      instance_eval "@#{attribute}"
+  def self.type attr, types, &block
+    define_method attr do
+      instance_eval "@#{attr}"
     end
-    define_method "#{attribute}=".to_sym do |value|
+    define_method "#{attr}=".to_sym do |value|
       assert_type value, types
       instance_exec( value, &block ) if block_given?
-      instance_eval "@#{attribute} = value"
+      instance_eval "@#{attr} = value"
+    end
+    define_method "__assert_type__#{attr}" do
+      assert_type( instance_eval( "@#{attr}" ), types )
+    end
+  end
+
+  def initialize
+    self.methods.select{|n|n.to_s=~/^__assert_type__/}.map{|n|n.to_s.gsub(/^__assert_type__(.+)$/,'\1').to_sym}.each do |attribute|
+      self.send( "__assert_type__#{attribute}".to_sym )
     end
   end
 
   def self.init *attributes, &block
     define_method :initialize do |*args|
+      (self.methods.select{|n|n.to_s=~/^__assert_type__/}.map{|n|n.to_s.gsub(/^__assert_type__(.+)$/,'\1').to_sym}-attributes).each do |attribute|
+        self.send( "__assert_type__#{attribute}".to_sym )
+      end
       attributes.each do |attribute|
-        self.send( "#{attribute}=".to_sym, args.shift )
+        value = args.shift
+        self.send( "#{attribute}=".to_sym, value )
       end
       self.instance_eval( &block ) if block_given?
     end
@@ -133,13 +146,12 @@ class YAML_Model
       this_attribute_singular = this_class_name.downcase.to_sym
       that_attribute_singular = that_class_name.downcase.to_sym
       via_class_name = [ this_class_name, that_class_name ].sort.map{|n|n.capitalize}.join('')
-      via_class = eval( "#{via_class_name}||=Class.new(YAML_Model)" )
+      via_class = eval( "#{via_class_name}||=Class.new(YAML_Model) do
+  type :#{this_attribute_singular}, #{this_class}
+  type :#{that_attribute_singular}, #{that_class}
+  init #{[this_attribute_singular,that_attribute_singular].sort.map{|n|":#{n}"}.join(',')}
+end" )
       via_attribute_plural = ( via_class_name.downcase + "s" ).to_sym
-
-      if via_class.instance_variables.empty?
-        via_class.type this_attribute_singular, this_class
-        via_class.type that_attribute_singular, that_class
-      end
 
       this_class.has via_attribute_plural, via_class
 
@@ -150,7 +162,7 @@ class YAML_Model
       end
 
       define_method "add_#{that_attribute_singular}".to_sym do |that_instance|
-        via_instance = via_class.create
+        via_instance = ( ( this_attribute_singular < that_attribute_singular ) ? via_class.create( self, that_instance ) : via_class.create( that_instance, self ) )
         via_instance.send( "#{this_attribute_singular}=".to_sym, self )
         via_instance.send( "#{that_attribute_singular}=".to_sym, that_instance )
       end
