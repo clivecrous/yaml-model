@@ -55,6 +55,7 @@ class YAML_Model
 
   def self.init *attributes, &block
     define_method :initialize do |*args|
+      raise ArgumentError.new( "wrong number of arguments (#{args.size} for #{attributes.size}" ) unless args.size == attributes.size
       (self.methods.select{|n|n.to_s=~/^__assert_type__/}.map{|n|n.to_s.gsub(/^__assert_type__(.+)$/,'\1').to_sym}-attributes).each do |attribute|
         self.send( "__assert_type__#{attribute}".to_sym )
       end
