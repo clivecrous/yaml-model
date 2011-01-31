@@ -37,7 +37,7 @@ class YAML_Model
   end
 
   def self.assert_type( variable, types )
-    assert( [types].flatten.inject(false){|result,type|result||=(type===variable)}, "Invalid type: `#{variable.class.name}`" )
+    assert( [types].flatten.inject(false){|result,type|result||=(type===variable)}, "Invalid type: `#{variable.class.name}` for `#{self.name}::#{variable}` should be of: #{types.inspect}" )
   end
 
   def self.type attr, types, options = {}, &block
