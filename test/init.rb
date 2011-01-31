@@ -11,7 +11,14 @@ describe YAML_Model, "::init" do
   class CanSetInstanceVariables < YAML_Model
     type :name, String
     init :name do
-      @name = "Bar"
+      self.name = "Bar"
+    end
+  end
+
+  class SettingOfDefaultValues < YAML_Model
+    type :name, String
+    init do
+      self.name = "Bob"
     end
   end
 
@@ -26,9 +33,14 @@ describe YAML_Model, "::init" do
     $ran_it.should == true
   end
 
-  it "can set instance varibles inside blocks it's given" do
+  it "can set instance variables inside blocks it's given" do
     test = CanSetInstanceVariables.create( "Foo" )
     test.name.should == "Bar"
+  end
+
+  it "allows setting of default values" do
+    test = SettingOfDefaultValues.create
+    test.name.should == "Bob"
   end
 
 end

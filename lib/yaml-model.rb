@@ -33,7 +33,7 @@ class YAML_Model
     assert( [types].flatten.inject(false){|result,type|result||=(type===variable)}, "Invalid type: `#{variable.class.name}`" )
   end
 
-  def self.type attr, types, &block
+  def self.type attr, types, options = {}, &block
     define_method attr do
       instance_eval "@#{attr}"
     end
@@ -41,6 +41,9 @@ class YAML_Model
       assert_type value, types
       instance_exec( value, &block ) if block_given?
       instance_eval "@#{attr} = value"
+    end
+    define_singleton_method "__#{attr}__default".to_sym do
+      options[ :default ]
     end
     define_method "__assert_type__#{attr}" do
       assert_type( instance_eval( "@#{attr}" ), types )
@@ -56,14 +59,20 @@ class YAML_Model
   def self.init *attributes, &block
     define_method :initialize do |*args|
       raise ArgumentError.new( "wrong number of arguments (#{args.size} for #{attributes.size}" ) unless args.size == attributes.size
-      (self.methods.select{|n|n.to_s=~/^__assert_type__/}.map{|n|n.to_s.gsub(/^__assert_type__(.+)$/,'\1').to_sym}-attributes).each do |attribute|
-        self.send( "__assert_type__#{attribute}".to_sym )
-      end
+
       attributes.each do |attribute|
         value = args.shift
         self.send( "#{attribute}=".to_sym, value )
       end
+
+      # FIXME For some reason commands within this block to set attribute values
+      # require the `self.` prefix or they just don't work
       self.instance_eval( &block ) if block_given?
+
+      (self.methods.select{|n|n.to_s=~/^__assert_type__/}.map{|n|n.to_s.gsub(/^__assert_type__(.+)$/,'\1').to_sym}-attributes).each do |attribute|
+        self.send( "__assert_type__#{attribute}".to_sym )
+      end
+
     end
   end
 
