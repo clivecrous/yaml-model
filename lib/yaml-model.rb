@@ -3,6 +3,13 @@ require 'yaml-model/version'
 
 class YAML_Model
 
+  def self.inherited( child )
+    child.instance_eval('@__attributes = {}')
+    child.define_singleton_method( :attributes ) do
+      @__attributes
+    end
+  end
+
   class Error < Exception
   end
 
@@ -25,34 +32,36 @@ class YAML_Model
     @@database[ :data ][ self.name ] ||= []
   end
 
-  def assert( assertion, info )
+  def self.assert( assertion, info )
     raise Error.new( info.inspect ) unless assertion
   end
 
-  def assert_type( variable, types )
+  def self.assert_type( variable, types )
     assert( [types].flatten.inject(false){|result,type|result||=(type===variable)}, "Invalid type: `#{variable.class.name}`" )
   end
 
   def self.type attr, types, options = {}, &block
+    @__attributes[ attr ] = [ types, options ]
     define_method attr do
       instance_eval "@#{attr}"
     end
     define_method "#{attr}=".to_sym do |value|
-      assert_type value, types
+      YAML_Model.assert_type value, types
       instance_exec( value, &block ) if block_given?
       instance_eval "@#{attr} = value"
     end
     define_singleton_method "__#{attr}__default".to_sym do
       options[ :default ]
     end
-    define_method "__assert_type__#{attr}" do
-      assert_type( instance_eval( "@#{attr}" ), types )
+    define_method "__#{attr}__assert_type" do
+      YAML_Model.assert_type( instance_eval( "@#{attr}" ), types )
     end
   end
 
   def initialize
-    self.methods.select{|n|n.to_s=~/^__assert_type__/}.map{|n|n.to_s.gsub(/^__assert_type__(.+)$/,'\1').to_sym}.each do |attribute|
-      self.send( "__assert_type__#{attribute}".to_sym )
+    self.class.attributes.keys.each do |attribute|
+      instance_eval( "#{attribute} = self.class.__#{attribute}__default unless @#{attribute}" )
+      instance_eval( "__#{attribute}__assert_type" )
     end
   end
 
@@ -69,10 +78,7 @@ class YAML_Model
       # require the `self.` prefix or they just don't work
       self.instance_eval( &block ) if block_given?
 
-      (self.methods.select{|n|n.to_s=~/^__assert_type__/}.map{|n|n.to_s.gsub(/^__assert_type__(.+)$/,'\1').to_sym}-attributes).each do |attribute|
-        self.send( "__assert_type__#{attribute}".to_sym )
-      end
-
+      super()
     end
   end
 
