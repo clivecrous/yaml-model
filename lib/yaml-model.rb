@@ -60,7 +60,7 @@ class YAML_Model
 
   def initialize
     self.class.attributes.keys.each do |attribute|
-      instance_eval( "#{attribute} = self.class.__#{attribute}__default unless @#{attribute}" )
+      instance_eval( "@#{attribute} ||= self.class.__#{attribute}__default" )
       instance_eval( "__#{attribute}__assert_type" )
     end
   end
