@@ -22,6 +22,10 @@ class YAML_Model
     }
   end
 
+  def self.next_oid
+    @@database[ :next_oid ]
+  end
+
   reset!
 
   attr_reader :id

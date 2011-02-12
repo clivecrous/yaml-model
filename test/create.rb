@@ -28,5 +28,11 @@ describe YAML_Model, "::create" do
     lambda{ Person.create( "Bob", "Smith" ) }.should raise_error( ArgumentError )
   end
 
+  it "increments the next_oid" do
+    next_oid = YAML_Model.next_oid
+    Person.create( "Bob" )
+    ( next_oid + 1 ).should == YAML_Model.next_oid
+  end
+
 end
 
