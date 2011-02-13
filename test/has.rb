@@ -9,7 +9,7 @@ describe YAML_Model, "::has" do
   class Post < YAML_Model
     type :user, User
     init :user
-    has :tags, Tag, :many_to_many
+    has :tags, Tag, :many_to_many => true
   end
 
   class User < YAML_Model
@@ -17,7 +17,7 @@ describe YAML_Model, "::has" do
   end
 
   class Tag < YAML_Model
-    has :posts, Post, :many_to_many
+    has :posts, Post, :many_to_many => true
   end
 
   before( :each ) do

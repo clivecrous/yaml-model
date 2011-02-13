@@ -159,8 +159,11 @@ class YAML_Model
 
   sort_by :id
 
-  def self.has( that_attribute_plural, that_class, many_to_many = false )
-    if many_to_many
+  def self.has( that_attribute_plural, that_class, opts = {} )
+    options = {
+      :many_to_many => false
+    }.merge( opts )
+    if options[ :many_to_many ]
       this_class = self
       this_class_name, that_class_name = [this_class,that_class].map{|n|n.name.split(':')[-1]}
       this_attribute_singular = this_class_name.downcase.to_sym
