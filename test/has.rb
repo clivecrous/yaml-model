@@ -5,6 +5,8 @@ describe YAML_Model, "::has" do
   User = Class.new( YAML_Model )
   Post = Class.new( YAML_Model )
   Tag = Class.new( YAML_Model )
+  MultiUserUser = Class.new( YAML_Model )
+  MultiUserPost = Class.new( YAML_Model )
 
   class Post < YAML_Model
     type :user, User
@@ -20,12 +22,74 @@ describe YAML_Model, "::has" do
     has :posts, Post, :many_to_many => true
   end
 
+  class MultiUserUser < YAML_Model
+    has :posts_confirmed, MultiUserPost, MultiUserPost => :confirmed_by
+    has :posts_created, MultiUserPost, MultiUserPost => :created_by
+    has :posts, MultiUserPost
+  end
+
+  class MultiUserPost < YAML_Model
+    type :created_by, MultiUserUser
+    type :confirmed_by, MultiUserUser
+    init :created_by, :confirmed_by
+  end
+
   before( :each ) do
     YAML_Model.reset!
   end
 
   it "creates a method of the correct attribute name" do
     User.instance_methods.index( :posts ).should_not == nil
+  end
+
+  it "caters for multiple links to a single model" do
+    creator_1 = MultiUserUser.create
+    creator_2 = MultiUserUser.create
+    confirmer_1 = MultiUserUser.create
+    confirmer_2 = MultiUserUser.create
+
+    post_1 = MultiUserPost.create( creator_1, confirmer_1 )
+    post_2 = MultiUserPost.create( creator_1, confirmer_2 )
+    post_3 = MultiUserPost.create( creator_2, confirmer_1 )
+    post_4 = MultiUserPost.create( creator_1, creator_2 )
+
+    post_1.created_by.id.should == creator_1.id
+    post_2.created_by.id.should == creator_1.id
+    post_3.created_by.id.should == creator_2.id
+    post_4.created_by.id.should == creator_1.id
+
+    post_1.confirmed_by.id.should == confirmer_1.id
+    post_2.confirmed_by.id.should == confirmer_2.id
+    post_3.confirmed_by.id.should == confirmer_1.id
+    post_4.confirmed_by.id.should == creator_2.id
+
+    creator_1.posts_created.size.should == 3
+    creator_1.posts_created.map{|n|n.id}.sort.should == [ post_1.id, post_2.id, post_4.id ]
+    creator_1.posts_confirmed.size.should == 0
+    creator_1.posts_confirmed.map{|n|n.id}.sort.should == []
+    creator_1.posts.size.should == 3
+    creator_1.posts.map{|n|n.id}.sort.should == [ post_1.id, post_2.id, post_4.id ]
+
+    creator_2.posts_created.size.should == 1
+    creator_2.posts_created.map{|n|n.id}.sort.should == [ post_3.id ]
+    creator_2.posts_confirmed.size.should == 1
+    creator_2.posts_confirmed.map{|n|n.id}.sort.should == [ post_4.id ]
+    creator_2.posts.size.should == 2
+    creator_2.posts.map{|n|n.id}.sort.should == [ post_3.id, post_4.id ]
+
+    confirmer_1.posts_created.size.should == 0
+    confirmer_1.posts_created.map{|n|n.id}.sort.should == []
+    confirmer_1.posts_confirmed.size.should == 2
+    confirmer_1.posts_confirmed.map{|n|n.id}.sort.should == [ post_1.id, post_3.id ]
+    confirmer_1.posts.size.should == 2
+    confirmer_1.posts.map{|n|n.id}.sort.should == [ post_1.id, post_3.id ]
+
+    confirmer_2.posts_created.size.should == 0
+    confirmer_2.posts_created.map{|n|n.id}.sort.should == []
+    confirmer_2.posts_confirmed.size.should == 1
+    confirmer_2.posts_confirmed.map{|n|n.id}.sort.should == [ post_2.id]
+    confirmer_2.posts.size.should == 1
+    confirmer_2.posts.map{|n|n.id}.sort.should == [ post_2.id ]
   end
 
   it "correctly references items that belong to it" do

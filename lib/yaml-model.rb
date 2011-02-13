@@ -194,8 +194,12 @@ end" )
 
       define_method that_attribute_plural do
         that_class.select do |that_instance|
-          that_instance.instance_variables.inject( false ) do |result,variable|
-            result ||= that_instance.instance_eval(variable.to_s).class == self.class && that_instance.instance_eval(variable.to_s).id == self.id
+          if options[ that_class ]
+            that_instance.instance_eval( options[ that_class ].to_s ).id == self.id
+          else
+            that_instance.instance_variables.inject( false ) do |result,variable|
+              result ||= that_instance.instance_eval(variable.to_s).class == self.class && that_instance.instance_eval(variable.to_s).id == self.id
+            end
           end
         end
       end
