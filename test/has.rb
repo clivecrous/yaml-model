@@ -110,6 +110,20 @@ describe YAML_Model, "::has" do
     Tag.instance_methods.index( :add_post ).should_not == nil
   end
 
+  it "adds instances in many_to_many relationships" do
+    dummy_user = User.create
+    post = Post.create( dummy_user )
+    tag_a = Tag.create
+    tag_b = Tag.create
+    post.tags.should == []
+    post.add_tag( tag_b )
+    post.tags.should == [ tag_b ]
+    tag_b.posts.should == [ post ]
+    post.add_tag( tag_a )
+    post.tags.sort{|a,b|a.id<=>b.id}.should == [ tag_a, tag_b ]
+    tag_a.posts.should == [ post ]
+  end
+
   it "handles many to many relationships seamlessly" do
     dummy_user = User.create
 
