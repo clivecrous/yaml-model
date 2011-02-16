@@ -151,6 +151,10 @@ class YAML_Model
     @@database[ :data ][ self.class.name ].delete( self )
   end
 
+  def to_s
+    "#{self.class.name}[#{id}]"
+  end
+
   def self.sort_by( *attributes )
     define_method '<=>'.to_sym do |other|
       attributes.map{|a|self.send(a)} <=> attributes.map{|a|other.send(a)}
