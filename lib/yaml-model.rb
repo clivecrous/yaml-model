@@ -155,6 +155,12 @@ class YAML_Model
     "#{self.class.name}[#{id}]"
   end
 
+  def inspect
+    keys = self.class.attributes.keys.sort
+    keys.delete( :id )
+    "#{to_s}{#{keys.map{|k|"#{k.inspect}=>#{self.send(k).inspect}"}.join(',')}}"
+  end
+
   def self.sort_by( *attributes )
     define_method '<=>'.to_sym do |other|
       attributes.map{|a|self.send(a)} <=> attributes.map{|a|other.send(a)}
