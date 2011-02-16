@@ -194,6 +194,11 @@ end" )
         via_instance.send( "#{that_attribute_singular}=".to_sym, that_instance )
       end
 
+      define_method "remove_#{that_attribute_singular}".to_sym do |that_instance|
+        via_instance = via_class.select{|n| n.send(this_attribute_singular).id == self.id && n.send(that_attribute_singular).id == that_instance.id }.first
+        via_instance.send( :delete )
+      end
+
     else
 
       define_method that_attribute_plural do
