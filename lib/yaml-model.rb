@@ -155,6 +155,10 @@ class YAML_Model
     "#{self.class.name}[#{id}]"
   end
 
+  def self.inspect
+    all.map{|a|a.inspect}.join("\n")
+  end
+
   def inspect
     keys = self.class.attributes.keys.sort
     keys.delete( :id )
