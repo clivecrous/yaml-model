@@ -162,7 +162,7 @@ class YAML_Model
   def inspect
     keys = self.class.attributes.keys.sort
     keys.delete( :id )
-    "#{to_s}{#{keys.map{|k|"#{k.inspect}=>#{self.send(k).inspect}"}.join(',')}}"
+    "#{self.class.name}[#{id}]{#{keys.map{|k|"#{k.inspect}=>#{self.send(k).inspect}"}.join(',')}}"
   end
 
   def self.sort_by( *attributes )
